@@ -11,6 +11,8 @@ const genAI = GEMINI_API_KEY ? new GoogleGenerativeAI(GEMINI_API_KEY) : null;
 
 // NIM / Gemma fallbacks disabled by default
 const NIM_API_KEY = null;
+const NIM_BASE_URL =
+  process.env.NVIDIA_BASE_URL || 'https://integrate.api.nvidia.com/v1';
 const NIM_QUESTION_MODELS = [];
 const NIM_DIAGNOSIS_MODELS = [];
 const NIM_CONVERSATION_MODELS = [];
@@ -67,8 +69,7 @@ const GEMINI_MODELS = parseModelList(
     'gemini-flash-latest',
     'gemini-flash-lite-latest',
     'gemini-2.5-flash-lite',
-    'gemini-2.0-flash-lite-001',
-    'gemma-3-4b-it'
+    'gemini-3.1-flash-lite'
   ]
 );
 
@@ -113,6 +114,9 @@ async function callGemini(prompt) {
       }
       return { text, modelName };
     } catch (err) {
+      console.warn(
+        `[AI] Gemini model ${modelName} failed: ${err?.message || err}`
+      );
       lastErr = err;
     }
   }

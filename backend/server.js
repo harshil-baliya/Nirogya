@@ -31,6 +31,31 @@ const prisma = new PrismaClient();
 const app = express();
 app.use(express.json({ limit: '15mb' }));
 
+// ── Request logging: one line per request, incl. auth failures ───────────
+app.use((req, res, next) => {
+  const startedAt = Date.now();
+  res.on('finish', () => {
+    const ms = Date.now() - startedAt;
+    const line = `${req.method} ${req.originalUrl} → ${res.statusCode} (${ms}ms)`;
+    if (res.statusCode >= 500) console.error(`[http] ${line}`);
+    else if (res.statusCode >= 400) console.warn(`[http] ${line}`);
+    else console.log(`[http] ${line}`);
+  });
+  next();
+});
+
+// ── CORS: the Expo web build calls this API cross-origin (8081 → 4000) ───
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(204);
+    return;
+  }
+  next();
+});
+
 const genomicUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 }
@@ -2198,6 +2223,21 @@ app.post(
     }
   }
 );
+
+// ── Global error handler: logs every unhandled route error with context ─
+app.use((err, req, res, _next) => {
+  console.error(`[error] ${req.method} ${req.originalUrl}:`, err);
+  if (res.headersSent) return;
+  res.status(err?.status || 500).json({ error: err?.message || 'Internal server error' });
+});
+
+// ── Never let async failures vanish silently ────────────────────────────
+process.on('unhandledRejection', (reason) => {
+  console.error('[process] Unhandled promise rejection:', reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[process] Uncaught exception:', err);
+});
 
 const port = Number(process.env.PORT || 4000);
 const host = process.env.HOST || '0.0.0.0';

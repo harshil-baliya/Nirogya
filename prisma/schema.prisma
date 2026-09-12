@@ -55,10 +55,10 @@ model Assessment {
   symptom    String?  @db.Text
   answers    Json?
   diagnosis  String?  @db.Text
-  riskScore  Int?     @map("riskscore")
-  riskLevel  String?  @map("risklevel") @db.Text
-  nextSteps  String[] @map("nextsteps") @db.Text
-  rawAiText  String?  @map("rawaitext") @db.Text
+  riskScore  Int?     @map("risk_score")
+  riskLevel  String?  @map("risk_level") @db.Text
+  nextSteps  String[] @map("next_steps") @db.Text
+  rawAiText  String?  @map("raw_ai_text") @db.Text
   createdAt  DateTime? @map("created_at") @default(now()) @db.Timestamptz
   deletedAt  DateTime? @map("deleted_at") @db.Timestamptz
 
